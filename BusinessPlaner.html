@@ -1399,7 +1399,7 @@ function CashplanTab(p){
       while(cur<=peStr&&lim<120){
         lim++;
         if(cur>=stStr){
-          evts.push({id:"r_"+r.id+"_"+cur,date:cur,amount:r.amount,label:r.customer+(r.poNumber?" ("+r.poNumber+")":""),type:"in",cashStatus:r.cashStatus||"sicher"});
+          var inAmt=r.ustPflichtig?pDE(r.amount)*1.19:pDE(r.amount);           evts.push({id:"r_"+r.id+"_"+cur,date:cur,amount:inAmt,label:r.customer+(r.poNumber?" ("+r.poNumber+")":""),type:"in",cashStatus:r.cashStatus||"sicher"});
           // USt: FA-Zahlung im naechsten Monat nach Rechnungsdatum
           if(r.ustPflichtig){
             var ust=pDE(r.amount)*0.19;
