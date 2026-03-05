@@ -1415,25 +1415,34 @@ function CashplanTab(p){
       }
     });
 
-    // Ausgaben Personal
-    p.personnel.forEach(function(emp){
-      if(emp.employmentStatus==="elternzeit")return;
-      if(!inScenario(emp.cashStatus))return;
-      var wp=(emp.workPct||100)/100;
-      var lnk=emp.includeLnk!==false;
-      for(var mi=0;mi<p.planMonths;mi++){
-        var mDate=new Date(ps.getFullYear(),ps.getMonth()+mi,1);
-        var mStr=mDate.toISOString().slice(0,10);
-        if(mStr<stStr)continue;
-        if(emp.startDate&&mStr<emp.startDate.slice(0,7)+"-01")continue;
-        if(emp.employmentStatus==="ausgeschieden"&&emp.endDate&&mStr.slice(0,7)>emp.endDate.slice(0,7))continue;
-        if(emp.endDate&&mStr.slice(0,7)>emp.endDate.slice(0,7))continue;
-        var sal=getSalaryAt(emp.salaryHistory||[],mStr);
-        var gross=(sal?sal.amount:(emp.grossSalary||0))*wp;
-        var total=gross+(lnk?calcLnk(gross):0);
-        evts.push({id:"e_"+emp.id+"_"+mStr,date:mStr,amount:-total,label:emp.name,type:"out",cashStatus:emp.cashStatus||"sicher"});
-      }
-    });
+  // Ausgaben Personal
++    var lnkByMonth={};
++    p.personnel.forEach(function(emp){
++      if(emp.employmentStatus==="elternzeit")return;
++      if(!inScenario(emp.cashStatus))return;
++      var wp=(emp.workPct||100)/100;
++      var lnk=emp.includeLnk!==false;
++      for(var mi=0;mi<p.planMonths;mi++){
++        var mDate=new Date(ps.getFullYear(),ps.getMonth()+mi,1);
++        var mStr=mDate.toISOString().slice(0,10);
++        if(mStr<stStr)continue;
++        if(emp.startDate&&mStr<emp.startDate.slice(0,7)+"-01")continue;
++        if(emp.employmentStatus==="ausgeschieden"&&emp.endDate&&mStr.slice(0,7)>emp.endDate.slice(0,7))continue;
++        if(emp.endDate&&mStr.slice(0,7)>emp.endDate.slice(0,7))continue;
++        var sal=getSalaryAt(emp.salaryHistory||[],mStr);
++        var gross=(sal?sal.amount:(emp.grossSalary||0))*wp;
++        var lnkAmt=lnk?calcLnk(gross):0;
++        evts.push({id:"e_"+emp.id+"_"+mStr,date:mStr,amount:-gross,label:emp.name,type:"out",cashStatus:emp.cashStatus||"sicher"});
++        if(lnkAmt>0){
++          if(!lnkByMonth[mStr])lnkByMonth[mStr]=0;
++          lnkByMonth[mStr]+=lnkAmt;
++        }
++      }
++    });
++    // LNK als Sammelposition pro Monat
++    Object.keys(lnkByMonth).forEach(function(mStr){
++      evts.push({id:"lnk_"+mStr,date:mStr,amount:-lnkByMonth[mStr],label:"SV-Beitraege gesamt",type:"out",cashStatus:"sicher"});
++    });
 
     // Ausgaben Sachkosten
     p.sachkosten.forEach(function(sk){
